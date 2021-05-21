@@ -1,24 +1,88 @@
-import React from "react";
+import React, { useState, FunctionComponent } from "react";
 import styled from "styled-components";
+import { AddressInfo } from "../../App";
 
-const Dashboard = () => {
+interface DashboardProps {
+  username: string;
+  handleLogout: () => void;
+  addressInfo: AddressInfo | undefined;
+}
+
+const Dashboard: FunctionComponent<DashboardProps> = ({
+  username,
+  handleLogout,
+  addressInfo,
+}) => {
+  const [destinationAddress, setDestinationAddress] = useState("");
+  const [sendAmount, setSendAmount] = useState("0");
+  const [addressError, setAddressError] = useState(false);
+  const [amountError, setAmountError] = useState(false);
+  const [success, setSuccess] = useState(false);
+
+  const handleSendCoins = () => {
+    setSuccess(false);
+    if (isNaN(Number(sendAmount)) || Number(sendAmount) < 0 || !sendAmount) {
+      setAmountError(true);
+      return;
+    }
+    if (!destinationAddress) {
+      setAddressError(true);
+      return;
+    }
+    setAddressError(false);
+    setAmountError(false);
+
+    fetch(
+      `http://jobcoin.gemini.com/porthole-reliably/api/transactions?fromAddress=${username}&toAddress=${destinationAddress}&amount=${sendAmount}`,
+      {
+        method: "POST",
+      }
+    )
+      .then((response) => response.json())
+      .then((data) => {
+        setSuccess(true);
+      })
+      .catch((error) => {
+        console.error("Error:", error);
+      });
+  };
   return (
     <Container>
-      <Menu>Dashboard</Menu>
+      <Menu>
+        <WalletAddress>{username}</WalletAddress>
+        <SignoutButton onClick={handleLogout}>Sign Out</SignoutButton>
+      </Menu>
       <Body>
         <LeftSection>
           <Balance>
             <BalanceTitle>Jobcoin Balance</BalanceTitle>
-            <BalanceAmount>$1000</BalanceAmount>
+            <BalanceAmount>
+              {addressInfo?.balance ? addressInfo.balance : ""}
+            </BalanceAmount>
           </Balance>
           <Send>
             <BalanceTitle>Send Jobcoin</BalanceTitle>
             <SendInfo>
               <Title>Depositor Address</Title>
-              <Input type="text" />
+              <Input
+                type="text"
+                value={destinationAddress}
+                onChange={(e) => setDestinationAddress(e.target.value)}
+              />
+              {addressError && (
+                <Error>Incorrect address, please check and try again</Error>
+              )}
               <Title>Amount To Send</Title>
-              <Input type="text" />
-              <Button>Send Jobcoins</Button>
+              <Input
+                type="text"
+                value={sendAmount}
+                onChange={(e) => setSendAmount(e.target.value)}
+              />
+              {amountError && (
+                <Error>Incorrect amount, please check and try again</Error>
+              )}
+              <Button onClick={handleSendCoins}>Send Jobcoins</Button>
+              {success && <Success>Transaction Complete!</Success>}
             </SendInfo>
           </Send>
         </LeftSection>
@@ -38,8 +102,11 @@ const Container = styled.div`
 `;
 
 const Menu = styled.div`
+  display: flex;
+  justify-content: space-between;
   height: 30px;
   border-bottom: 1px solid lightgrey;
+  padding: 0 50px;
 `;
 
 const Body = styled.div`
@@ -71,7 +138,7 @@ const BalanceTitle = styled.div`
 
 const BalanceAmount = styled.div`
   display: flex;
-  color: lightgrey;
+  color: grey;
   justify-content: center;
   align-items: center;
   border-bottom: 1px solid lightgrey;
@@ -101,6 +168,7 @@ const Button = styled.button`
   border: 0px;
   height: 35px;
   width: 100%;
+  margin-top: 30px;
 
   :hover {
     cursor: pointer;
@@ -116,7 +184,8 @@ const Input = styled.input`
   flex-direction: column;
   width: 97%;
   height: 30px;
-  margin-bottom: 30px;
+  border: 1px solid lightgrey;
+  border-radius: 2px;
 `;
 
 const Title = styled.div`
@@ -125,4 +194,27 @@ const Title = styled.div`
   justify-content: flex-start;
   margin-bottom: 10px;
   color: lightgrey;
+  margin-top: 20px;
+`;
+
+const SignoutButton = styled.div`
+  cursor: pointer;
+  color: blue;
+`;
+
+const WalletAddress = styled.div`
+  color: grey;
+  font-weight: bold;
+`;
+
+const Error = styled.div`
+  color: red;
+  font-size: 12px;
+  margin-top: 5px;
+`;
+
+const Success = styled.div`
+  color: green;
+  font-size: 12px;
+  margin-top: 5px;
 `;

@@ -1,15 +1,34 @@
-import React from "react";
+import React, { FunctionComponent } from "react";
 import styled from "styled-components";
 
-const LoginPage = () => {
+interface LoginProps {
+  handleLogin: () => void;
+  username: string;
+  setUsername: (arg: string) => void;
+  error: boolean;
+}
+
+const LoginPage: FunctionComponent<LoginProps> = ({
+  handleLogin,
+  username,
+  setUsername,
+  error = false,
+}) => {
   return (
     <Container>
       <Wrapper>
         <Header>Welcome! Sign In With Your JobCoin Address</Header>
         <Body>
           <Title>Jobcoin Address</Title>
-          <Input type="text" />
-          <Button>Sign In </Button>
+          <Input
+            type="text"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+          />
+          {error && (
+            <Error>Incorrect address, please check and try again</Error>
+          )}
+          <Button onClick={handleLogin}>Sign In </Button>
         </Body>
       </Wrapper>
     </Container>
@@ -68,7 +87,6 @@ const Input = styled.input`
   flex-direction: column;
   width: 97%;
   height: 30px;
-  margin-bottom: 30px;
 `;
 const Button = styled.button`
   display: flex;
@@ -80,8 +98,15 @@ const Button = styled.button`
   height: 40px;
   width: 100%;
   margin-bottom: 10px;
+  margin-top 30px;
 
   :hover {
     cursor: pointer;
   }
+`;
+
+const Error = styled.div`
+  color: red;
+  font-size: 12px;
+  margin-top: 5px;
 `;
