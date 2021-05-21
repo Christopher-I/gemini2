@@ -2,6 +2,7 @@ import React, { useState, useEffect, FormEvent } from "react";
 import Login from "./Pages/LoginPage";
 import Dashboard from "./Pages/Dashboard";
 import "./App.css";
+import userData from "./State/Reducers/user";
 
 export interface TransactionsProps {
   amount: string;
@@ -28,13 +29,13 @@ const App = () => {
       .then((response) => response.json())
       .then((data) => setAddressInfo(data));
   };
+
   useEffect(() => {
     updateUserData();
-  }, []);
+  }, [username]);
 
   const handleLogin = (e: FormEvent) => {
     e.preventDefault();
-    updateUserData();
     if (
       addressInfo?.balance === "0" &&
       addressInfo?.transactions.length === 0
