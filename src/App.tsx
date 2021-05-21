@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, FormEvent } from "react";
 import Login from "./Pages/LoginPage";
 import Dashboard from "./Pages/Dashboard";
 import "./App.css";
 
-interface Transactions {
+export interface TransactionsProps {
   amount: string;
   timestamp: string;
   toAddress?: string;
@@ -12,7 +12,7 @@ interface Transactions {
 
 export interface AddressInfo {
   balance: string;
-  transactions: Array<Transactions>;
+  transactions: Array<TransactionsProps>;
 }
 
 const App = () => {
@@ -21,15 +21,20 @@ const App = () => {
   const [addressInfo, setAddressInfo] = useState<AddressInfo>();
   const [signinError, setSigninError] = useState(false);
 
-  useEffect(() => {
+  const updateUserData = () => {
     fetch(
       `http://jobcoin.gemini.com/porthole-reliably/api/addresses/${username}`
     )
       .then((response) => response.json())
       .then((data) => setAddressInfo(data));
-  }, [addressInfo, username]);
+  };
+  useEffect(() => {
+    updateUserData();
+  }, []);
 
-  const handleLogin = () => {
+  const handleLogin = (e: FormEvent) => {
+    e.preventDefault();
+    updateUserData();
     if (
       addressInfo?.balance === "0" &&
       addressInfo?.transactions.length === 0
@@ -53,6 +58,9 @@ const App = () => {
           username={username}
           handleLogout={handleLogout}
           addressInfo={addressInfo}
+          transactions={addressInfo?.transactions}
+          balance={addressInfo?.balance}
+          updateUserData={updateUserData}
         />
       ) : (
         <Login

@@ -1,8 +1,8 @@
-import React, { FunctionComponent } from "react";
+import React, { FormEvent, FunctionComponent } from "react";
 import styled from "styled-components";
 
 interface LoginProps {
-  handleLogin: () => void;
+  handleLogin: (e: FormEvent) => void;
   username: string;
   setUsername: (arg: string) => void;
   error: boolean;
@@ -18,18 +18,22 @@ const LoginPage: FunctionComponent<LoginProps> = ({
     <Container>
       <Wrapper>
         <Header>Welcome! Sign In With Your JobCoin Address</Header>
-        <Body>
-          <Title>Jobcoin Address</Title>
-          <Input
-            type="text"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-          />
-          {error && (
-            <Error>Incorrect address, please check and try again</Error>
-          )}
-          <Button onClick={handleLogin}>Sign In </Button>
-        </Body>
+        <form onSubmit={(e) => false}>
+          <Body>
+            <Title>Jobcoin Address</Title>
+
+            <Input
+              type="text"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              onSubmit={(e) => handleLogin(e)}
+            />
+            {error && (
+              <Error>Incorrect address, please check and try again</Error>
+            )}
+            <Button onClick={(e) => handleLogin(e)}>Sign In </Button>
+          </Body>
+        </form>
       </Wrapper>
     </Container>
   );

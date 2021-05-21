@@ -1,27 +1,53 @@
-import React, { useState, FunctionComponent } from "react";
+import React, { useState, useEffect, FunctionComponent } from "react";
 import styled from "styled-components";
+import { format } from "date-fns";
+import {
+  LineChart,
+  CartesianGrid,
+  Line,
+  Tooltip,
+  ResponsiveContainer,
+  YAxis,
+  XAxis,
+} from "recharts";
 import { AddressInfo } from "../../App";
+import { TransactionsProps } from "../../App";
 
 interface DashboardProps {
   username: string;
   handleLogout: () => void;
   addressInfo: AddressInfo | undefined;
+  transactions?: TransactionsProps[];
+  balance?: string;
+  updateUserData: () => void;
 }
 
 const Dashboard: FunctionComponent<DashboardProps> = ({
   username,
   handleLogout,
   addressInfo,
+  transactions,
+  balance = 0,
+  updateUserData,
 }) => {
   const [destinationAddress, setDestinationAddress] = useState("");
   const [sendAmount, setSendAmount] = useState("0");
   const [addressError, setAddressError] = useState(false);
   const [amountError, setAmountError] = useState(false);
-  const [success, setSuccess] = useState(false);
+  const [transactionSuccess, setTransactionSuccess] = useState(false);
+  const [transactionFail, setTransactionFail] = useState(false);
+  const [transactionsData, setTransactionsData] =
+    useState<TransactionsProps[] | undefined>();
 
   const handleSendCoins = () => {
-    setSuccess(false);
-    if (isNaN(Number(sendAmount)) || Number(sendAmount) < 0 || !sendAmount) {
+    setTransactionSuccess(false); //reset success and error state
+    setTransactionFail(false);
+    if (
+      isNaN(Number(sendAmount)) ||
+      Number(sendAmount) < 0 ||
+      !sendAmount ||
+      sendAmount > balance
+    ) {
       setAmountError(true);
       return;
     }
@@ -40,12 +66,54 @@ const Dashboard: FunctionComponent<DashboardProps> = ({
     )
       .then((response) => response.json())
       .then((data) => {
-        setSuccess(true);
+        setTransactionSuccess(true);
+        updateUserData();
       })
       .catch((error) => {
+        setTransactionFail(true);
         console.error("Error:", error);
       });
   };
+
+  useEffect(() => {
+    let data: any[] | undefined = [];
+    let coinCount = 50;
+
+    transactions?.forEach(
+      ({ timestamp, toAddress, fromAddress, amount }, index) => {
+        const relevantTransaction =
+          fromAddress === username || toAddress === username;
+
+        if (relevantTransaction) {
+          let name = format(new Date(timestamp), "MM/dd, hh:mm aaa");
+          let walletBalance;
+
+          if (index === 0) {
+            walletBalance = amount;
+          }
+          if (fromAddress === username && index !== 0) {
+            walletBalance = Number(coinCount) - Number(amount);
+            coinCount = walletBalance;
+          }
+          if (toAddress === username && index !== 0) {
+            walletBalance = Number(coinCount) + Number(amount);
+            coinCount = walletBalance;
+          }
+
+          data?.push({
+            name: name,
+            uv: walletBalance,
+            amount: amount,
+            coinCount,
+          });
+        }
+      }
+    );
+    const sortedDates = data.sort((a, b) => b.name - a.name);
+    setTransactionsData(sortedDates);
+    updateUserData();
+  }, [balance]);
+
   return (
     <Container>
       <Menu>
@@ -82,12 +150,26 @@ const Dashboard: FunctionComponent<DashboardProps> = ({
                 <Error>Incorrect amount, please check and try again</Error>
               )}
               <Button onClick={handleSendCoins}>Send Jobcoins</Button>
-              {success && <Success>Transaction Complete!</Success>}
+              {transactionSuccess && <Success>Transaction Complete!</Success>}
+              {transactionFail && (
+                <Error>Transaction Failed, Please Try Again Later!</Error>
+              )}
             </SendInfo>
           </Send>
         </LeftSection>
         <RightSection>
-          <Graph>sss</Graph>
+          <Graph>
+            Balance Over Time
+            <ResponsiveContainer width="95%" height="95%">
+              <LineChart width={500} height={300} data={transactionsData}>
+                <XAxis dataKey="name" />
+                <YAxis />
+                <CartesianGrid stroke="#eee" strokeDasharray="5 5" />
+                <Line type="monotone" dataKey="uv" stroke="#8884d8" />
+                <Tooltip />
+              </LineChart>
+            </ResponsiveContainer>
+          </Graph>
         </RightSection>
       </Body>
     </Container>
